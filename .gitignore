@@ -3,3 +3,4 @@ dist/
 .test-data/
 out/
 *.log
+.idea/
