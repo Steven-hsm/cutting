@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self';"
+  />
+  <title>滚动截图</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="bar">
+    <span id="dot"></span>
+    <div class="texts">
+      <span id="status">滚动截图中…</span>
+      <span id="detail"></span>
+    </div>
+    <button id="btn-stop" type="button">停止</button>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

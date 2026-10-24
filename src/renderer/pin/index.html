@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self';"
+  />
+  <title>贴图</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <img id="image" alt="贴图" draggable="false" style="object-fit: contain; background: #101114;" />
+  <div id="text-body" class="hidden"></div>
+  <div id="color-body" class="hidden">
+    <div id="color-swatch"></div>
+    <div id="color-hex"></div>
+  </div>
+  <div id="controls">
+    <button id="btn-ocr" type="button" title="识别文字 (O)">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.2V3h2M11 3h2v1.2M13 11.8V13h-2M5 13H3v-1.2M4.6 6.4h6.8M8 6.4V11M6.6 11h2.8"/></svg>
+    </button>
+    <button id="btn-copy" type="button" title="复制 (Ctrl+C)">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5.2" y="5.2" width="8" height="8" rx="1.4"/><path d="M10.8 5.2V4a1.4 1.4 0 00-1.4-1.4H4A1.4 1.4 0 002.6 4v5.4A1.4 1.4 0 004 10.8h1.2"/></svg>
+    </button>
+    <button id="btn-close" type="button" title="关闭 (Esc)">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.4 4.4l7.2 7.2M11.6 4.4l-7.2 7.2"/></svg>
+    </button>
+  </div>
+  <div id="ocr-layer" class="hidden"></div>
+
+  <div id="ocr-actions" class="hidden">
+    <span id="ocr-count"></span>
+    <button id="ocr-copy-all" type="button">复制全部</button>
+    <button id="ocr-exit" type="button">退出</button>
+  </div>
+
+  <div id="hint-bar">
+    滚轮缩放 · Ctrl+滚轮 透明度 · 1-4 旋转 · 5/6 翻转 · O 识图 · X 穿透 · 拖动自动吸附 · 双击关闭 · Shift+双击 缩略图 · Esc 关闭
+  </div>
+  <div id="toast" class="hidden"></div>
+  <script src="app.js"></script>
+</body>
+</html>

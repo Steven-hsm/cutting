@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self'; img-src 'self' file: data:; style-src 'self' 'unsafe-inline'; script-src 'self';"
+  />
+  <title>截图历史</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <div class="title-wrap">
+      <h1>截图历史</h1>
+      <span id="count" class="count"></span>
+    </div>
+    <div class="header-actions">
+      <button id="btn-capture" type="button" class="ghost-btn primary">截图</button>
+      <button id="btn-pin-clipboard" type="button" class="ghost-btn">贴剪贴板</button>
+      <button id="btn-edit-clipboard" type="button" class="ghost-btn">编辑剪贴板图片</button>
+      <button id="btn-open-dir" type="button" class="ghost-btn">打开保存目录</button>
+    </div>
+  </header>
+
+  <div class="toolbar-row">
+    <input id="search" type="search" placeholder="搜索文件名、日期或大小…" />
+    <div class="filter-group">
+      <button id="filter-all" type="button" class="filter-btn active">全部</button>
+      <button id="filter-favorite" type="button" class="filter-btn">收藏</button>
+    </div>
+  </div>
+
+  <main id="grid" class="grid"></main>
+  <div id="empty" class="empty hidden">还没有截图记录<br /><span>使用 Ctrl+Alt+A 截取第一张图</span></div>
+
+  <div id="drop-zone" class="drop-zone hidden">
+    <div class="drop-zone-inner">
+      <strong>松开以编辑图片</strong>
+      <span>支持 PNG / JPG / WebP / BMP / GIF 等格式</span>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

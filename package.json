@@ -1,0 +1,40 @@
+{
+  "name": "cutting",
+  "productName": "Cutting",
+  "version": "0.1.0",
+  "author": "Cutting",
+  "description": "Windows 截图工具：快捷键截图、文字标注、马赛克、历史记录",
+  "main": "src/main/index.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "icon": "node tools/make-icon.js",
+    "dist": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "^44.9.1",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.cutting.screenshot",
+    "productName": "Cutting",
+    "compression": "maximum",
+    "electronLanguages": [
+      "zh-CN",
+      "en-US"
+    ],
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

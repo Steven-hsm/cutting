@@ -1,0 +1,101 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: none;
+  font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+}
+
+/* 提示条：贴在窗口底部、紧邻顶边线上方 */
+.badge {
+  position: absolute;
+  left: 0;
+  bottom: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 5px 5px 0 0;
+  background: rgba(214, 69, 69, 0.96);
+  color: #fff;
+  font-size: 10.5px;
+  letter-spacing: 0.8px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+body.tone-blue .badge {
+  background: rgba(47, 128, 237, 0.96);
+}
+
+.badge .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+  animation: pulse 1.1s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.2;
+  }
+}
+
+/* 4px 细边框：只画在贴近选区的一侧 */
+.edge {
+  position: absolute;
+  background: rgba(47, 128, 237, 0.95);
+}
+
+.edge-top {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  z-index: 2;
+}
+
+.edge-left {
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 4px;
+}
+
+.edge-right {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+}
+
+.edge-bottom {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+body.tone-red .edge {
+  background: rgba(47, 128, 237, 0.95);
+}
+
+.hidden {
+  display: none !important;
+}

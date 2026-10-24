@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self';"
+  />
+  <title>Cutting 设置</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Cutting 设置</h1>
+    <p class="subtitle">截图 · 标注 · 马赛克 · 历史记录</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>全局快捷键</h2>
+      <div class="field">
+        <label for="capture-shortcut">截图</label>
+        <input id="capture-shortcut" class="shortcut-input" readonly />
+        <div class="hint">点击后按下组合键；Backspace 清除，Esc 取消。若被其他程序占用会提示失败。</div>
+      </div>
+      <div class="field">
+        <label for="pin-clipboard-shortcut">贴图（剪贴板）</label>
+        <input id="pin-clipboard-shortcut" class="shortcut-input" readonly />
+        <div class="hint">把剪贴板中的图片 / 文字 / 颜色直接贴到屏幕顶层，默认 F3。</div>
+      </div>
+      <div class="field">
+        <label for="history-shortcut">截图历史</label>
+        <input id="history-shortcut" class="shortcut-input" readonly />
+        <div class="hint">历史窗口可通过该快捷键快速唤起/隐藏，默认置顶显示。</div>
+      </div>
+      <div class="field">
+        <label for="history-dir-shortcut">打开历史目录</label>
+        <input id="history-dir-shortcut" class="shortcut-input" readonly />
+        <div class="hint">在资源管理器中打开历史索引与缩略图所在目录，默认 Ctrl+Alt+D。</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>截图行为</h2>
+      <div class="field">
+        <label for="capture-delay">延时截图</label>
+        <select id="capture-delay">
+          <option value="0">不延时</option>
+          <option value="3">3 秒</option>
+          <option value="5">5 秒</option>
+          <option value="10">10 秒</option>
+        </select>
+        <div class="hint">托盘「延时截图」和快捷键截图会在等待后进入截图，便于捕捉展开的菜单等。</div>
+      </div>
+      <div class="field">
+        <label for="after-capture">完成后</label>
+        <select id="after-capture">
+          <option value="save-copy">保存到目录 + 复制到剪贴板</option>
+          <option value="save">仅保存到目录</option>
+          <option value="copy">仅复制到剪贴板</option>
+          <option value="pin">直接贴到屏幕顶层</option>
+        </select>
+      </div>
+    </section>
+
+    <section>
+      <h2>输出</h2>
+      <div class="field">
+        <label for="image-format">图片格式</label>
+        <select id="image-format">
+          <option value="png">PNG（无损）</option>
+          <option value="jpeg">JPG（有损，体积小）</option>
+          <option value="webp">WebP</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="image-quality">压缩质量</label>
+        <input id="image-quality" type="number" min="30" max="100" step="5" />
+        <div class="hint">仅 JPG / WebP 生效，范围 30 - 100。</div>
+      </div>
+      <div class="field">
+        <label for="file-template">文件名模板</label>
+        <input id="file-template" />
+        <div class="hint">可用变量：{yyyy} {MM} {dd} {HH} {mm} {ss} {ms}；重名自动追加序号。</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>保存</h2>
+      <div class="field">
+        <label for="save-dir">保存目录</label>
+        <div class="row">
+          <input id="save-dir" readonly />
+          <button id="btn-browse" type="button">浏览…</button>
+          <button id="btn-open-dir" type="button">打开</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="history-limit">历史记录上限</label>
+        <input id="history-limit" type="number" min="10" max="2000" step="10" />
+        <div class="hint">超出上限后自动清理最旧的记录（不会删除已保存的原图）。范围 10 - 2000。</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>滚动截图</h2>
+      <div class="field">
+        <label for="scroll-notches">每步滚动</label>
+        <select id="scroll-notches">
+          <option value="2">小（2 格）</option>
+          <option value="3">中（3 格）</option>
+          <option value="5">大（5 格）</option>
+          <option value="8">超大（8 格）</option>
+        </select>
+        <div class="hint">滚动截图会自动向下滚动并拼接画面，检测到无法继续滚动时自动结束并保存。</div>
+      </div>
+      <div class="field">
+        <label for="scroll-delay">滚动间隔</label>
+        <select id="scroll-delay">
+          <option value="250">快（250ms）</option>
+          <option value="400">中（400ms）</option>
+          <option value="700">慢（700ms）</option>
+          <option value="1100">很慢（1100ms）</option>
+        </select>
+        <div class="hint">页面渲染较慢时（如在线文档、长网页）建议选更慢的间隔。</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>截图美化</h2>
+      <label class="check"><input id="beautify-enabled" type="checkbox" /> 导出时应用美化（圆角、投影、背景、水印）</label>
+      <div class="field">
+        <label for="beautify-background">背景</label>
+        <select id="beautify-background">
+          <option value="gradient">渐变</option>
+          <option value="solid">纯色</option>
+          <option value="transparent">透明</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="beautify-gradient">渐变配色</label>
+        <select id="beautify-gradient">
+          <option value="ocean">海洋蓝</option>
+          <option value="sunset">日落橙</option>
+          <option value="forest">森林绿</option>
+          <option value="grape">星空紫</option>
+          <option value="graphite">石墨灰</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="beautify-color">纯色背景</label>
+        <input id="beautify-color" type="color" value="#1f2937" />
+      </div>
+      <div class="field">
+        <label for="beautify-padding">内边距</label>
+        <input id="beautify-padding" type="number" min="0" max="200" step="4" />
+        <div class="hint">0 - 200 像素，越大留白越多。</div>
+      </div>
+      <div class="field">
+        <label for="beautify-radius">圆角</label>
+        <input id="beautify-radius" type="number" min="0" max="64" step="2" />
+      </div>
+      <label class="check"><input id="beautify-shadow" type="checkbox" /> 添加投影</label>
+      <div class="field">
+        <label for="beautify-watermark">水印文字</label>
+        <input id="beautify-watermark" maxlength="80" placeholder="留空则不加水印" />
+      </div>
+      <div class="hint" style="margin-left: 152px;">美化只影响保存/复制的图片；贴图、OCR 与历史缩略图保持原图。</div>
+    </section>
+
+    <section>
+      <h2>窗口与启动</h2>
+      <label class="check"><input id="history-on-top" type="checkbox" /> 历史窗口始终置顶</label>
+      <label class="check"><input id="auto-start" type="checkbox" /> 开机自动启动（打包安装后生效）</label>
+    </section>
+  </main>
+
+  <footer>
+    <span id="status" class="status"></span>
+    <button id="btn-save" type="button" class="primary">保存设置</button>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

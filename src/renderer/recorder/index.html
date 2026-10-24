@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self'; img-src 'self' data:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self';"
+  />
+  <title>GIF 录制</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="bar">
+    <span id="dot"></span>
+    <span id="timer">00:00</span>
+    <span id="size" class="size"></span>
+    <button id="btn-stop" type="button">停止</button>
+  </div>
+  <div id="status" class="hidden"></div>
+  <video id="video" muted playsinline></video>
+  <script src="gifEncoder.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

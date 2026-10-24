@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self';"
+  />
+  <title>文字识别结果</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <div class="title-wrap">
+      <h1>文字识别</h1>
+      <span id="meta" class="meta"></span>
+    </div>
+    <div class="actions">
+      <button id="btn-copy" type="button" class="primary">复制全部</button>
+      <button id="btn-close" type="button">关闭</button>
+    </div>
+  </header>
+
+  <textarea id="text" spellcheck="false" placeholder="未识别到文字"></textarea>
+
+  <footer>
+    <span id="status" class="status"></span>
+    <span class="tip">使用 Windows 本地 OCR 离线识别 · Ctrl+A 全选 · Esc 关闭</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
