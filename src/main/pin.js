@@ -9,6 +9,8 @@ const ocr = require('./ocr');
 
 // webContents.id -> { dataUrl, kind, text, color }
 const inits = new Map();
+// webContents.id -> 渲染进程首帧就绪后的显示函数
+const pendingShows = new Map();
 // 所有贴图窗口，用于边缘吸附对齐
 const pinWindows = new Set();
 
@@ -52,18 +54,21 @@ function clampToDisplay(display, x, y, width, height) {
  * 在屏幕顶层创建一个贴图窗口。
  * x/y/width/height 均为 DIP（与 display.bounds 同一坐标系）。
  */
-function create({
-  dataUrl,
-  fileUrl,
-  filePath,
-  x,
-  y,
-  width,
-  height,
-  kind = 'image',
-  text = '',
-  color = '',
-}) {
+function create(
+  {
+    dataUrl,
+    fileUrl,
+    filePath,
+    x,
+    y,
+    width,
+    height,
+    kind = 'image',
+    text = '',
+    color = '',
+  },
+  onShown
+) {
   if (kind === 'image' && (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/'))) {
     return { ok: false, error: '图片数据无效' };
   }
@@ -112,19 +117,65 @@ function create({
   const key = win.webContents.id;
   inits.set(key, { dataUrl, fileUrl, filePath, kind, text, color });
   pinWindows.add(win);
+
+  let shown = false;
+  let showTimer = 0;
+  // 等渲染进程把图片解码完成后再显示窗口：贴图不会先闪一下深色底
+  const showWindow = () => {
+    if (shown) return;
+    shown = true;
+    if (showTimer) {
+      clearTimeout(showTimer);
+      showTimer = 0;
+    }
+    pendingShows.delete(key);
+    if (win.isDestroyed()) return;
+    win.show();
+    win.focus();
+    if (typeof onShown === 'function') {
+      try {
+        onShown();
+      } catch (err) {
+        // ignore
+      }
+    }
+  };
+
+  pendingShows.set(key, showWindow);
+  // 渲染进程异常时兜底显示，避免贴图窗口永远不可见
+  showTimer = setTimeout(showWindow, 2500);
+
   win.on('closed', () => {
+    if (showTimer) {
+      clearTimeout(showTimer);
+      showTimer = 0;
+    }
+    pendingShows.delete(key);
     inits.delete(key);
     thumbnailState.delete(key);
     pinWindows.delete(win);
+    // 贴图窗口在显示前就关闭（例如图片数据失效）时，仍要通知调用方收尾，
+    // 否则从截图界面发起贴图时会留下无法操作的遮罩
+    if (!shown) {
+      shown = true;
+      if (typeof onShown === 'function') {
+        try {
+          onShown();
+        } catch (err) {
+          // ignore
+        }
+      }
+    }
   });
 
   win.loadFile(pinHtml());
-  win.once('ready-to-show', () => {
-    win.show();
-    win.focus();
-  });
 
   return { ok: true };
+}
+
+function ready(sender) {
+  const show = sender ? pendingShows.get(sender.id) : null;
+  if (show) show();
 }
 
 function getInit(sender) {
@@ -554,6 +605,7 @@ function pinFromFile(filePath) {
 
 module.exports = {
   create,
+  ready,
   getInit,
   copyFromWindow,
   ocrFromWindow,

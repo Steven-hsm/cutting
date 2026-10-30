@@ -13,6 +13,29 @@ contextBridge.exposeInMainWorld('api', {
     startGif: (payload) => invoke('overlay:start-gif', payload),
     startScroll: (payload) => invoke('overlay:start-scroll', payload),
     cancel: () => ipcRenderer.send('overlay:cancel'),
+    activate: () => ipcRenderer.send('overlay:activate'),
+    onWindows: (callback) => {
+      const listener = (event, windows) => {
+        try {
+          callback(windows);
+        } catch (err) {
+          // ignore
+        }
+      };
+      ipcRenderer.on('overlay:windows', listener);
+      return () => ipcRenderer.removeListener('overlay:windows', listener);
+    },
+    onDeactivate: (callback) => {
+      const listener = () => {
+        try {
+          callback();
+        } catch (err) {
+          // ignore
+        }
+      };
+      ipcRenderer.on('overlay:deactivate', listener);
+      return () => ipcRenderer.removeListener('overlay:deactivate', listener);
+    },
   },
   ocr: {
     recognize: (dataUrl) => invoke('ocr:recognize', dataUrl),
@@ -62,6 +85,7 @@ contextBridge.exposeInMainWorld('api', {
   },
   pin: {
     getInit: () => invoke('pin:get-init'),
+    ready: () => ipcRenderer.send('pin:ready'),
     copy: () => invoke('pin:copy'),
     ocr: () => invoke('pin:ocr'),
     close: () => invoke('pin:close'),

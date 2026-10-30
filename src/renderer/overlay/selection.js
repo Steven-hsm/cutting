@@ -19,7 +19,8 @@
 
   /** 找到光标所在的最上层（面积最小）窗口，用于窗口识别 */
   function windowAt(x, y) {
-    const list = (App.init && App.init.windows) || [];
+    const list =
+      (App.windows && App.windows.length ? App.windows : App.init && App.init.windows) || [];
     let match = null;
     for (const item of list) {
       if (x < item.x || y < item.y || x > item.x + item.w || y > item.y + item.h) continue;
@@ -108,6 +109,15 @@
     if (window.TextLayer && TextLayer.isActive()) return;
     // 正在使用编辑工具时，交给编辑画布处理
     if (Editor.getTool() && App.state === 'selected') return;
+
+    // 通知主进程：当前这块屏幕成为操作目标，其他屏幕清空选区
+    if (App.state !== 'selected') {
+      try {
+        window.api.overlay.activate();
+      } catch (err) {
+        // ignore
+      }
+    }
 
     if (App.state === 'selected' && App.rect) {
       const dir = handleAt(event.clientX, event.clientY);

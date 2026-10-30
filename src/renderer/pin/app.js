@@ -319,20 +319,39 @@
     const textBody = document.getElementById('text-body');
     const colorBody = document.getElementById('color-body');
 
+    // 内容真正绘制完成后再让主进程显示窗口，避免先闪一下深色底
+    const notifyReady = () => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          try {
+            window.api.pin.ready();
+          } catch (err) {
+            // ignore
+          }
+        });
+      });
+    };
+
     if (state.kind === 'text') {
       image.classList.add('hidden');
       textBody.textContent = init.text || '';
       textBody.classList.remove('hidden');
+      notifyReady();
     } else if (state.kind === 'color') {
       image.classList.add('hidden');
       document.getElementById('color-swatch').style.background = init.color;
       document.getElementById('color-hex').textContent = init.color;
       colorBody.classList.remove('hidden');
-    } else if (state.kind === 'gif') {
-      // 直接用文件 URL，浏览器会播放 GIF 动画
-      image.src = init.fileUrl;
+      notifyReady();
     } else {
-      image.src = init.dataUrl;
+      image.onload = notifyReady;
+      image.onerror = close;
+      if (state.kind === 'gif') {
+        // 直接用文件 URL，浏览器会播放 GIF 动画
+        image.src = init.fileUrl;
+      } else {
+        image.src = init.dataUrl;
+      }
     }
 
     const surface = dragSurface();

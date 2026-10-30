@@ -24,15 +24,15 @@ function register(deps) {
   historyStore.onChanged(() => historyWindow.send('history:changed'));
 
   // ---------- 截图覆盖窗 ----------
-  ipcMain.handle('overlay:get-init', () => overlay.getInit());
+  ipcMain.handle('overlay:get-init', (event) => overlay.getInit(event.sender));
 
-  ipcMain.handle('overlay:ready', () => {
-    overlay.ready();
+  ipcMain.handle('overlay:ready', (event) => {
+    overlay.ready(event.sender);
     return { ok: true };
   });
 
   ipcMain.handle('overlay:confirm', async (event, payload) => {
-    const result = await overlay.confirm(payload);
+    const result = await overlay.confirm(payload, event.sender);
     if (result && result.ok) {
       notify('截图完成', result.actionLabel || (result.filePath ? '已保存' : '已复制'));
     } else if (result) {
@@ -41,9 +41,9 @@ function register(deps) {
     return result;
   });
 
-  ipcMain.handle('overlay:pin', (event, payload) => overlay.pin(payload));
+  ipcMain.handle('overlay:pin', (event, payload) => overlay.pin(payload, event.sender));
   ipcMain.handle('overlay:start-gif', (event, payload) => {
-    const result = overlay.startGif(payload);
+    const result = overlay.startGif(payload, event.sender);
     if (result && result.ok) {
       notify('开始录制 GIF', '按控制条上的「停止」或 Esc 结束');
     } else if (result) {
@@ -53,7 +53,7 @@ function register(deps) {
   });
   ipcMain.handle('overlay:start-scroll', (event, payload) => {
     try {
-      const result = overlay.startScroll(payload);
+      const result = overlay.startScroll(payload, event.sender);
       if (result && !result.ok) {
         notify('无法开始滚动截图', result.error || '未知错误');
       }
@@ -65,6 +65,7 @@ function register(deps) {
   });
 
   ipcMain.on('overlay:cancel', () => overlay.cancel());
+  ipcMain.on('overlay:activate', (event) => overlay.activate(event.sender));
 
   // ---------- GIF 录制 ----------
   ipcMain.handle('recorder:get-init', (event) => recording.getInit(event.sender));
@@ -164,6 +165,7 @@ function register(deps) {
     pin.setMouseThrough(event.sender, ignore)
   );
   ipcMain.handle('pin:from-clipboard', () => pin.fromClipboard());
+  ipcMain.on('pin:ready', (event) => pin.ready(event.sender));
 
   // ---------- 设置 ----------
   ipcMain.handle('settings:get', () => ({

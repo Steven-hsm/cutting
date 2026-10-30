@@ -14,6 +14,7 @@ const App = (window.App = {
   maskScaleY: 1,
   rect: null,
   hoverWindow: null,
+  windows: [],
   state: 'selecting',
   confirming: false,
   pinning: false,
@@ -310,6 +311,22 @@ const App = (window.App = {
     Selection.redraw();
   },
 
+  /**
+   * 用户在别的显示器上开始操作时，清掉本屏的选区与标注，
+   * 让所有覆盖窗始终只保留一份有效选区。
+   */
+  deactivate() {
+    if (this.state === 'selected' || this.rect) {
+      this.resetSelection();
+      return;
+    }
+    if (this.hoverWindow) {
+      this.hoverWindow = null;
+      this.setHint('拖动选择区域 · Alt 放大镜 · Esc 取消');
+      Selection.redraw();
+    }
+  },
+
   async confirm() {
     // 同步守卫：连续按回车/点击保存时只发起一次保存
     if (this.confirming) return;
@@ -508,7 +525,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   if (!init) {
-    window.api.overlay.cancel();
+    // 该显示器的抓屏失败时，主进程会自行销毁这个覆盖窗
     return;
   }
 
@@ -516,6 +533,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   App.scale = init.scaleFactor || 1;
   App.dipW = init.dipWidth;
   App.dipH = init.dipHeight;
+  App.windows = Array.isArray(init.windows) ? init.windows : [];
 
   const image = new Image();
   image.onload = () => {
@@ -531,6 +549,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     Editor.setBeautify(init.beautify || null);
     App.bindGlobalEvents();
 
+    window.api.overlay.onWindows((windows) => {
+      App.windows = Array.isArray(windows) ? windows : [];
+    });
+    window.api.overlay.onDeactivate(() => {
+      App.deactivate();
+    });
+
     App.setHint('拖动选择区域 · Alt 放大镜 · Esc 取消');
     Selection.redraw();
 
@@ -539,7 +564,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       App.attachSelection();
     }
 
-    window.api.overlay.ready();
+    // 等画布内容真正提交到合成器后再显示窗口，避免出现一帧黑屏闪烁
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.api.overlay.ready();
+      });
+    });
   };
   image.onerror = () => {
     window.api.overlay.cancel();
