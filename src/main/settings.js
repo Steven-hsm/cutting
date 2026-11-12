@@ -9,11 +9,11 @@ const LEGACY_CAPTURE = 'Ctrl+Alt+A';
 const LEGACY_HISTORY = 'Ctrl+Alt+H';
 
 const DEFAULTS = {
-  version: 3,
+  version: 4,
   shortcuts: {
     capture: 'F1',
     pinClipboard: 'F3',
-    history: LEGACY_HISTORY,
+    history: 'F2',
     historyDir: 'Ctrl+Alt+D',
   },
   autoStart: false,
@@ -126,6 +126,19 @@ function normalize(raw) {
       out.shortcuts.capture = base.shortcuts.capture;
       out.shortcuts.pinClipboard = base.shortcuts.pinClipboard;
     }
+
+    // v4：历史窗口默认快捷键由 Ctrl+Alt+H 改为 F2（仅迁移旧版本配置，
+    // 若 F2 已被其他功能占用则保持原快捷键，避免冲突）
+    if (raw.version !== DEFAULTS.version && out.shortcuts.history === LEGACY_HISTORY) {
+      const occupied = [
+        out.shortcuts.capture,
+        out.shortcuts.pinClipboard,
+        out.shortcuts.historyDir,
+      ].filter(Boolean);
+      if (!occupied.includes('F2')) {
+        out.shortcuts.history = base.shortcuts.history;
+      }
+    }
   }
   if (typeof raw.saveDir === 'string' && raw.saveDir.trim()) {
     out.saveDir = raw.saveDir.trim();
@@ -178,7 +191,7 @@ function normalize(raw) {
     };
   }
 
-  out.version = 3;
+  out.version = DEFAULTS.version;
   return out;
 }
 

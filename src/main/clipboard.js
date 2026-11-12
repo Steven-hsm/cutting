@@ -1,7 +1,60 @@
 'use strict';
 
-const { clipboard, ClipboardItem } = require('electron');
+const { clipboard, ClipboardItem, nativeImage } = require('electron');
+const crypto = require('crypto');
 const { execFile } = require('child_process');
+
+/**
+ * 生成图片的轻量指纹（32×32 归一化后取 SHA-1）。
+ * 用于判断剪贴板中的图片对应哪一条历史截图，以及在连按 F3 时判断剪贴板是否变化。
+ */
+function fingerprintImage(image) {
+  if (!image || image.isEmpty()) return '';
+  try {
+    const small = image.resize({ width: 32, height: 32, quality: 'good' });
+    return crypto.createHash('sha1').update(small.toBitmap()).digest('hex');
+  } catch (err) {
+    return '';
+  }
+}
+
+/**
+ * 读取当前剪贴板内容指纹。
+ * Electron 44 的剪贴板读取是异步 API（clipboard.read()/readText()）。
+ * 返回 { type: 'image' | 'text' | 'empty', hash }。
+ */
+async function readFingerprint() {
+  try {
+    const items = await clipboard.read();
+    for (const item of items || []) {
+      const types = Array.isArray(item.types) ? item.types : [];
+      for (const imageType of types.filter((type) => type.startsWith('image/'))) {
+        try {
+          const blob = await item.getType(imageType);
+          if (!blob || typeof blob.arrayBuffer !== 'function') continue;
+          const buffer = Buffer.from(await blob.arrayBuffer());
+          const hash = fingerprintImage(nativeImage.createFromBuffer(buffer));
+          if (hash) return { type: 'image', hash };
+        } catch (err) {
+          // 换下一个 MIME 类型
+        }
+      }
+    }
+  } catch (err) {
+    // ignore
+  }
+
+  let text = '';
+  try {
+    text = (await clipboard.readText()) || '';
+  } catch (err) {
+    text = '';
+  }
+  if (text) {
+    return { type: 'text', hash: crypto.createHash('sha1').update(text).digest('hex') };
+  }
+  return { type: 'empty', hash: '' };
+}
 
 /**
  * Electron 44 起剪贴板改为异步 ClipboardItem API。
@@ -75,6 +128,8 @@ if ($null -ne $list) { foreach ($p in $list) { Write-Output $p } }
 }
 
 module.exports = {
+  fingerprintImage,
+  readFingerprint,
   writeImageBuffer,
   writeNativeImage,
   writeFileToClipboard,

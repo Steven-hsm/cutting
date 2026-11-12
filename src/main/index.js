@@ -42,8 +42,20 @@ if (!app.requestSingleInstanceLock()) {
     const pinWindow = require('./pin');
     const tray = require('./tray');
     const ipc = require('./ipc');
+    const clipboardHelper = require('./clipboard');
 
     historyStore.init();
+
+    // F3 连按状态：上一次贴出的历史记录 id + 当时的剪贴板指纹。
+    // 剪贴板不变时继续往前贴更早的截图；剪贴板变化则重新从对应内容开始。
+    let lastPinFingerprint = '';
+    let lastPinHistoryId = '';
+
+    historyStore.onChanged(() => {
+      // 新增/删除历史后重新开始倒序，避免按旧索引贴错
+      lastPinFingerprint = '';
+      lastPinHistoryId = '';
+    });
 
     const openSaveDir = async () => {
       const dir = settings.get().saveDir;
@@ -78,10 +90,59 @@ if (!app.requestSingleInstanceLock()) {
       }
     };
 
-    const pinClipboard = async () => {
-      let result = null;
+    const pinHistoryEntry = (entry) => {
+      if (!entry || !entry.fileExists) return { ok: false, error: '原图已被移动或删除' };
+      return entry.type === 'gif'
+        ? pinWindow.pinGifFile(entry.filePath, entry.width, entry.height, entry.region)
+        : pinWindow.pinFromFile(entry.filePath);
+    };
 
-      // 刚录完 GIF（8 秒内）时，优先贴这条最新 GIF：
+    const listHistory = () => historyStore.list().filter((entry) => entry.fileExists);
+
+    /** 从 fromId 之后继续往前贴，贴到最旧一张后回到最新一张循环 */
+    const pinNextOlder = (list, fromId) => {
+      if (!list.length) return null;
+      let index = list.findIndex((entry) => entry.id === fromId);
+      if (index < 0) index = -1;
+      for (let step = 1; step <= list.length; step += 1) {
+        const entry = list[(index + step) % list.length];
+        const result = pinHistoryEntry(entry);
+        if (result && result.ok) {
+          lastPinHistoryId = entry.id;
+          return result;
+        }
+      }
+      return null;
+    };
+
+    const pinClipboard = async () => {
+      const list = listHistory();
+      const fingerprint = await clipboardHelper.readFingerprint();
+      const signature = `${fingerprint.type}:${fingerprint.hash}`;
+      // 剪贴板中的图片若与某条历史截图一致，说明是刚截的图或从历史复制的图
+      let ownedEntry =
+        fingerprint.type === 'image'
+          ? list.find((entry) => entry.imageHash && entry.imageHash === fingerprint.hash)
+          : null;
+
+      // 兼容升级前保存的历史记录：按需补算最近几条的图片指纹
+      if (fingerprint.type === 'image' && !ownedEntry) {
+        const candidates = list.filter((entry) => !entry.imageHash).slice(0, 5);
+        for (const candidate of candidates) {
+          if (historyStore.ensureImageHash(candidate.id) === fingerprint.hash) {
+            ownedEntry = candidate;
+            break;
+          }
+        }
+      }
+
+      // 1) 连续按 F3 且剪贴板内容没变：接着往前贴更早的一张
+      if (signature === lastPinFingerprint && lastPinHistoryId && list.length) {
+        const result = pinNextOlder(list, lastPinHistoryId);
+        if (result) return;
+      }
+
+      // 2) 刚录完 GIF（8 秒内）时，优先贴这条最新 GIF：
       // 避免剪贴板尚未来得及更新或被其他内容占用时贴出旧内容
       const latest = historyStore.list()[0];
       if (
@@ -90,22 +151,53 @@ if (!app.requestSingleInstanceLock()) {
         latest.fileExists &&
         Date.now() - latest.createdAt < 8000
       ) {
-        return pinWindow.pinGifFile(latest.filePath, latest.width, latest.height, latest.region);
+        const result = pinWindow.pinGifFile(
+          latest.filePath,
+          latest.width,
+          latest.height,
+          latest.region
+        );
+        if (result && result.ok) {
+          lastPinFingerprint = signature;
+          lastPinHistoryId = latest.id;
+          return;
+        }
       }
 
-      result = await pinWindow.fromClipboard();
+      // 3) 剪贴板里的截图对应某条历史记录：从这张开始，下一次继续往前
+      if (ownedEntry) {
+        const result = pinHistoryEntry(ownedEntry);
+        if (result && result.ok) {
+          lastPinFingerprint = signature;
+          lastPinHistoryId = ownedEntry.id;
+          return;
+        }
+      }
 
-      // 剪贴板暂无可用内容时，回退到最近一条历史记录。
+      // 4) 普通剪贴板内容（外部图片 / 文字 / 颜色 / 文件）
+      let result = await pinWindow.fromClipboard();
+
+      // 5) 剪贴板暂无可用内容时，回退到最近一条历史记录。
       // 这一路径覆盖「刚保存 GIF/截图后立刻按 F3」的场景：即使剪贴板写入/读取
       // 出现延迟或被其他程序占用，也能贴出最新一张。
       if (!result || !result.ok) {
-        const recent = historyStore.list().find((entry) => entry.fileExists);
+        const recent = list[0];
         if (recent) {
-          result =
-            recent.type === 'gif'
-              ? pinWindow.pinGifFile(recent.filePath, recent.width, recent.height, recent.region)
-              : pinWindow.pinFromFile(recent.filePath);
+          const pinned = pinHistoryEntry(recent);
+          if (pinned && pinned.ok) {
+            lastPinFingerprint = signature;
+            lastPinHistoryId = recent.id;
+            return;
+          }
+          result = pinned || result;
         }
+      }
+
+      if (result && result.ok) {
+        // 外部剪贴板内容：重复按 F3 仍贴剪贴板，不进入历史倒序
+        lastPinFingerprint = signature;
+        lastPinHistoryId = '';
+        return;
       }
 
       if (result && !result.ok) {

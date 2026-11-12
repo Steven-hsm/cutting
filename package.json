@@ -19,6 +19,7 @@
     "appId": "com.cutting.screenshot",
     "productName": "Cutting",
     "compression": "maximum",
+    "electronDist": "node_modules/electron/dist",
     "electronLanguages": [
       "zh-CN",
       "en-US"

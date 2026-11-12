@@ -114,6 +114,8 @@ function applyLimit() {
 function add({ image, filePath, width, height, scaleFactor, note, type, region }) {
   const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   const createdAt = Date.now();
+  // 存一份内容指纹：F3 连按时据此判断剪贴板中的截图对应哪条记录
+  const imageHash = clipboardHelper.fingerprintImage(image);
 
   let thumbPath = '';
   try {
@@ -129,6 +131,7 @@ function add({ image, filePath, width, height, scaleFactor, note, type, region }
   const entry = {
     id,
     createdAt,
+    imageHash,
     filePath,
     width: width || image.getSize().width,
     height: height || image.getSize().height,
@@ -168,6 +171,26 @@ function find(id) {
   return index.entries.find((entry) => entry.id === id) || null;
 }
 
+/**
+ * 按需为旧版本保存的条目补算图片指纹（用于 F3 识别剪贴板中的历史截图）。
+ */
+function ensureImageHash(id) {
+  const entry = find(id);
+  if (!entry || !entry.filePath) return '';
+  if (entry.imageHash) return entry.imageHash;
+  try {
+    const image = nativeImage.createFromPath(entry.filePath);
+    if (image.isEmpty()) return '';
+    const hash = clipboardHelper.fingerprintImage(image);
+    if (!hash) return '';
+    entry.imageHash = hash;
+    persist();
+    return hash;
+  } catch (err) {
+    return '';
+  }
+}
+
 async function copy(id) {
   const entry = find(id);
   if (!entry) return { ok: false, error: '记录不存在' };
@@ -184,6 +207,13 @@ async function copy(id) {
 
     const image = nativeImage.createFromPath(entry.filePath);
     if (image.isEmpty()) return { ok: false, error: '图片读取失败' };
+
+    // 复制到剪贴板后，F3 需要靠文件像素指纹识别出这是哪条记录
+    const imageHash = clipboardHelper.fingerprintImage(image);
+    if (imageHash && imageHash !== entry.imageHash) {
+      entry.imageHash = imageHash;
+      persist();
+    }
 
     const isJpeg = /\.jpe?g$/i.test(entry.filePath);
     const mime = isJpeg ? 'image/jpeg' : 'image/png';
@@ -236,6 +266,7 @@ module.exports = {
   add,
   applyLimit,
   find,
+  ensureImageHash,
   list,
   copy,
   reveal,
