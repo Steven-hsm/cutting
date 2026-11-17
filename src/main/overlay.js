@@ -319,6 +319,13 @@ function showSessionIfReady(target) {
 
   for (const entry of ordered) {
     if (entry.win.isDestroyed()) continue;
+    // 先以 0 不透明度显示，让 DWM 的窗口淡入动画作用在透明窗口上，
+    // 之后再立即恢复不透明度：画面直接出现，不会看到从桌面淡入的“闪一下”。
+    try {
+      entry.win.setOpacity(0);
+    } catch (err) {
+      // ignore
+    }
     if (String(entry.display.id) === cursorId) {
       entry.win.show();
     } else {
@@ -339,6 +346,19 @@ function showSessionIfReady(target) {
       // ignore
     }
   }
+
+  // 等窗口显示动画开始后立刻恢复不透明度（show 之后同步设置可能被 DWM 动画覆盖）
+  setTimeout(() => {
+    if (session !== target) return;
+    for (const entry of target.entries) {
+      if (entry.win.isDestroyed()) continue;
+      try {
+        entry.win.setOpacity(1);
+      } catch (err) {
+        // ignore
+      }
+    }
+  }, 30);
 
   shownAt = Date.now();
   windowListTimer = setTimeout(() => {
